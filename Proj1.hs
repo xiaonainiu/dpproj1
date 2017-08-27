@@ -28,6 +28,19 @@ data GameState = State [[String]] deriving (Eq, Show)
 
 goals = [["A1","B1","C1"],["A2","B1","C1"],["A3","B1","C1"]]
 
+-- initialize GameState
+initializeNote :: [String]
+initializeNote = ["A","B","C","D","E","F","G"]
+
+initializeOctave :: [String]
+initializeOctave = ["1","2","3"]
+
+initializePitch :: [String] -> [String] -> [String]
+initializePitch [] [] = []
+initializePitch (x:xs) [] = []
+initializePitch [] [y1,y2,y3] = []
+initializePitch (x:xs) [y1,y2,y3] = [(x ++ y1),(x ++ y2),(x ++ y3)] ++ initializePitch
+
 -- state functions
 deleteState :: [String] -> [[String]] -> [[String]]
 deleteState guess [] = []
