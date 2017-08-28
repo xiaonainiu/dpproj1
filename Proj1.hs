@@ -80,7 +80,7 @@ deleteList_000 [a,b,c] (x:xs) =
 deleteList_03c :: [String] -> [[String]] -> [[String]]
 deleteList_03c [a,b,c] [] = []
 deleteList_03c [a:as,b:bs,c:cs] (x:xs) =
-	if x == [a:as,b:bs,c:cs] || (matchNoteOrOctaveGuess a x) || (matchNoteOrOctaveGuess b x) || (matchNoteOrOctaveGuess c x) 
+	if x == [a:as,b:bs,c:cs] && (not (matchNoteOrOctaveGuess a x)) && (not (matchNoteOrOctaveGuess b x)) && (not (matchNoteOrOctaveGuess c x)) 
 		then [x] ++ deleteList_03c [a:as,b:bs,c:cs] xs
 		else deleteList_03c [a:as,b:bs,c:cs] xs
 
