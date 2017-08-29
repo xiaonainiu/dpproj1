@@ -26,8 +26,7 @@ initializePitch :: [String] -> [String] -> [String]
 initializePitch [] [] = []
 initializePitch (x:xs) [] = []
 initializePitch [] [y1,y2,y3] = []
-initializePitch (x:xs) [y1,y2,y3] = 
-	[x ++ y1] ++ [x ++ y2] ++ [x ++ y3] ++ initializePitch xs [y1,y2,y3]
+initializePitch (x:xs) [y1,y2,y3] = [x ++ y1] ++ [x ++ y2] ++ [x ++ y3] ++ initializePitch xs [y1,y2,y3]
 pitch = initializePitch note octave
 
 choose :: [String] -> Int -> [[String]]
@@ -47,13 +46,6 @@ initialGuess = (["A1","B2","C3"], initializeGameState (initializePitch initializ
 -- function nextGuess
 nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
 nextGuess (guess, (x:xs)) (a,b,c) = (  chooseGuess (newtarget guess (x:xs) (a,b,c)) ,  newtarget guess (x:xs) (a,b,c)  )
---nextGuess (guess, state) (0,b,c) = (head (state \\ deleteList_0bc guess state), state \\ (deleteList_0bc guess state))
---nextGuess (guess, state) (0,3,c) = (head (state \\ deleteList_030 guess state), state \\ (deleteList_030 guess state))
--- nextGuess (guess, state) (0,2,c) = (head (state \\ deleteList_020 guess state), state \\ (deleteList_020 guess state))
--- nextGuess (guess, state) (0,0,c) = (head (state \\ deleteList_00c guess state), state \\ (deleteList_00c guess state))
---nextGuess (guess, state) (1,b,c) = (head (state \\ deleteList_1bc guess state), state \\ (deleteList_1bc guess state))
---nextGuess (guess, state) (2,b,c) = (head (state \\ deleteList_2bc guess state), state \\ (deleteList_2bc guess state))
---nextGuess (guess, state) (a,b,c) = (head (state \\ [guess]), state \\ [guess])
 
 eqNth :: Eq a => Int -> [a] -> [a] -> Bool
 eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
@@ -67,125 +59,32 @@ response target guess = (right, rightNote, rightOctave)
         rightOctave = num - (length $ deleteFirstsBy (eqNth 1) guess' target) - right
 
 newtarget :: [String] -> [[String]] -> (Int,Int,Int) -> [[String]]
-newtarget guess [] (a,b,c) = []
-newtarget guess [x:xs] (a,b,c) = if response [x] guess == (a,b,c)
-	then [[x]] ++ newtarget guess [xs] (a,b,c)
-	else newtarget guess [xs] (a,b,c)
+newtarget guess [[]] (a,b,c) = []
+newtarget guess [atarget] (a,b,c)= if response atarget guess == (a,b,c)
+	then [atarget]
+	else []
+newtarget guess target (a,b,c) = if response (head target) guess == (a,b,c)
+	then [(head target)] ++ newtarget guess (tail target) (a,b,c)
+	else newtarget guess (tail target) (a,b,c)
 
 chooseGuess :: [[String]] -> [String]
 chooseGuess [[]] = []
 chooseGuess [a] = a
-chooseGuess (x:xs) = x
+chooseGuess (a:b:xs) =
+	if avgTargetLen a (a:b:xs) (length (a:b:xs)) > avgTargetLen b (a:b:xs) (length (a:b:xs))
+		then chooseGuess (b:xs)
+		else chooseGuess (a:xs)
 
-matchPitchGuess :: String -> [String] -> Bool
-matchPitchGuess pit [] = False
-matchPitchGuess pit gus =
-	if (pit `elem` gus)
- 		then True
- 		else False
+avgTargetLen :: [String] -> [[String]] -> Int -> Double
+avgTargetLen assumetarget [] a = 0
+avgTargetLen assumetarget target  0 = 0
+avgTargetLen assumetarget target idx =
+	(getLength assumetarget (target !! (idx-1)) target) + avgTargetLen assumetarget target (idx-1)
 
-matchNoteOrOctaveGuess :: Char -> [String] -> Bool
-matchNoteOrOctaveGuess n_o [] = False
-matchNoteOrOctaveGuess n_o gus =
-	if (n_o `elem` (gus !! 0)) || (n_o `elem` (gus !! 0)) || (n_o `elem` (gus !! 0))
-		then True
-		else False
-
-
---deleteList_000 :: [String] -> [[String]] -> [[String]]
---deleteList_000 [a:ax,b:bx,c:cx] [] = []
---deleteList_000 [a:ax,b:bx,c:cx] (x:xs) =
---	if x == [a:ax,b:bx,c:cx] || (matchNoteOrOctaveGuess a x) || (matchNoteOrOctaveGuess ax x) || (matchNoteOrOctaveGuess b x) || (matchNoteOrOctaveGuess bx x) || (matchNoteOrOctaveGuess c x) || (matchNoteOrOctaveGuess cx x)
---		then [x] ++ deleteList_000 [a:ax,b:bx,c:cx] (x:xs)
---		else deleteList_000 [a:ax,b:bx,c:cx] (x:xs)
-
-deleteList_0bc :: [String] -> [[String]] -> [[String]]
-deleteList_0bc [a,b,c] [] = []
-deleteList_0bc [a,b,c] (x:xs) =
-	if x == [a,b,c] || (matchPitchGuess a x) || (matchPitchGuess b x) || (matchPitchGuess c x) 
-		then [x] ++ deleteList_0bc [a,b,c] xs
-		else deleteList_0bc [a,b,c] xs
+getLength :: [String] -> [String] -> [[String]] -> Double
+getLength assumetarget assumeguess [] = 0
+getLength assumetarget assumeguess target =
+	(fromIntegral (length ( newtarget assumeguess target (response assumetarget assumeguess) ))) / (fromIntegral (length target))
 
 
 
-
-
---deleteList_03c :: [String] -> [[String]] -> [[String]]
---deleteList_03c [a,b,c] [] = []
---deleteList_03c [a:as,b:bs,c:cs] (x:xs) =
---	if x == [a:as,b:bs,c:cs] && (not (matchNoteOrOctaveGuess a x)) && (not (matchNoteOrOctaveGuess b x)) && (not (matchNoteOrOctaveGuess c x)) 
---		then [x] ++ deleteList_03c [a:as,b:bs,c:cs] xs
---		else deleteList_03c [a:as,b:bs,c:cs] xs
-
--- deleteList_02c :: [String] -> [[String]] -> [[String]]
--- deleteList_02c [a,b,c] [] = []
--- deleteList_02c [a:as,b:bs,c:cs] (x:xs) =
--- 	if x == [a:as,b:bs,c:cs] || (matchNoteOrOctaveGuess a x) || (matchNoteOrOctaveGuess b x) || (matchNoteOrOctaveGuess c x) 
--- 		then [x] ++ deleteList_02c [a:as,b:bs,c:cs] xs
--- 		else deleteList_02c [a:as,b:bs,c:cs] xs
-
-deleteList_1bc :: [String] -> [[String]] -> [[String]]
-deleteList_1bc [a,b,c] [] = []
-deleteList_1bc [a,b,c] (x:xs) =
-	if x ==[a,b,c] ||
-		((not (matchPitchGuess a x)) && (not (matchPitchGuess b x)) && (not (matchPitchGuess c x))) ||
-		((not (matchPitchGuess a x)) && (matchPitchGuess b x) && (matchPitchGuess c x)) ||
-		((matchPitchGuess a x) && (not (matchPitchGuess b x)) && (matchPitchGuess c x)) ||
-		(matchPitchGuess a x) && (matchPitchGuess b x) && (not (matchPitchGuess c x))
-		then [x] ++ deleteList_1bc [a,b,c] xs
-		else deleteList_1bc [a,b,c] xs
-
-deleteList_2bc :: [String] -> [[String]] -> [[String]]
-deleteList_2bc [a,b,c] [] = []
-deleteList_2bc [a,b,c] (x:xs) =
-	if x == [a,b,c] ||
-		((not (matchPitchGuess a x)) && (not (matchPitchGuess b x)) && (not (matchPitchGuess c x))) ||
-		((matchPitchGuess a x) && (not (matchPitchGuess b x)) && (not (matchPitchGuess c x))) ||
-		((not (matchPitchGuess a x)) && (matchPitchGuess b x) && (not (matchPitchGuess c x))) ||
-		((not (matchPitchGuess a x)) && (not (matchPitchGuess b x)) && (matchPitchGuess c x))
-		then [x] ++ deleteList_2bc [a,b,c] xs
-		else deleteList_2bc [a,b,c] xs
-
-
-
--- state functions
---deleteStateByGuess :: [String] -> [[String]] -> [[String]]
---deleteStateByGuess guess [] = []
---deleteStateByGuess guess goals =
---	if matchGuessState guess goals
---		then (findInitOfState guess goals) ++ (findTailOfState guess goals)
---		else goals
-
---addState :: [String] -> [[String]] -> [[String]]
---addState guess goals = 
---	if matchGuessState guess goals
---		then goals
---		else [guess] ++ goals
-
---matchGuessState :: [String] -> [[String]] -> Bool
---matchGuessState guess [] = False
---matchGuessState guess goals = 
---	if guess == (head goals)
---		then True
---		else matchGuessState guess (tail goals)
-
---findInitOfState :: [String] -> [[String]] -> [[String]]
---findInitOfState guess [] = []
---findInitOfState guess goals =
---	if guess == (last goals)
---		then init goals
---		else findInitOfState guess (init goals)
-
---findTailOfState :: [String] -> [[String]] -> [[String]]
---findTailOfState guess [] = []
---findTailOfState guess goals =
---	if guess == (head goals)
---		then tail goals
---		else findTailOfState guess (tail goals)
-
---deleteStateByPitch :: String -> [[String]] ->  [[String]]
---deleteStateByPitch pit [] = []
---deleteStateByPitch pit goals =
---	if matchPitchState pit goals
---		then (findInitOfState guess goals) ++ (findTailOfState guess goals)
---		else goals
