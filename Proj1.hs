@@ -46,13 +46,36 @@ initialGuess = (["A1","B2","C3"], initializeGameState (initializePitch initializ
 
 -- function nextGuess
 nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
-nextGuess (guess, state) (0,b,c) = (head (state \\ deleteList_000 guess state), state \\ (deleteList_000 guess state))
-nextGuess (guess, state) (0,3,c) = (head (state \\ deleteList_030 guess state), state \\ (deleteList_030 guess state))
+nextGuess (guess, (x:xs)) (a,b,c) = (  chooseGuess (newtarget guess (x:xs) (a,b,c)) ,  newtarget guess (x:xs) (a,b,c)  )
+--nextGuess (guess, state) (0,b,c) = (head (state \\ deleteList_0bc guess state), state \\ (deleteList_0bc guess state))
+--nextGuess (guess, state) (0,3,c) = (head (state \\ deleteList_030 guess state), state \\ (deleteList_030 guess state))
 -- nextGuess (guess, state) (0,2,c) = (head (state \\ deleteList_020 guess state), state \\ (deleteList_020 guess state))
 -- nextGuess (guess, state) (0,0,c) = (head (state \\ deleteList_00c guess state), state \\ (deleteList_00c guess state))
-nextGuess (guess, state) (1,b,c) = (head (state \\ deleteList_1bc guess state), state \\ (deleteList_1bc guess state))
-nextGuess (guess, state) (2,b,c) = (head (state \\ deleteList_2bc guess state), state \\ (deleteList_2bc guess state))
-nextGuess (guess, state) (a,b,c) = (head (state \\ [guess]), state \\ [guess])
+--nextGuess (guess, state) (1,b,c) = (head (state \\ deleteList_1bc guess state), state \\ (deleteList_1bc guess state))
+--nextGuess (guess, state) (2,b,c) = (head (state \\ deleteList_2bc guess state), state \\ (deleteList_2bc guess state))
+--nextGuess (guess, state) (a,b,c) = (head (state \\ [guess]), state \\ [guess])
+
+eqNth :: Eq a => Int -> [a] -> [a] -> Bool
+eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
+
+response :: [String] -> [String] -> (Int,Int,Int)
+response target guess = (right, rightNote, rightOctave)
+  where guess'      = nub guess
+        right       = length $ intersect guess' target
+        num         = length guess'
+        rightNote   = num - (length $ deleteFirstsBy (eqNth 0) guess' target) - right
+        rightOctave = num - (length $ deleteFirstsBy (eqNth 1) guess' target) - right
+
+newtarget :: [String] -> [[String]] -> (Int,Int,Int) -> [[String]]
+newtarget guess [] (a,b,c) = []
+newtarget guess [x:xs] (a,b,c) = if response [x] guess == (a,b,c)
+	then [[x]] ++ newtarget guess [xs] (a,b,c)
+	else newtarget guess [xs] (a,b,c)
+
+chooseGuess :: [[String]] -> [String]
+chooseGuess [[]] = []
+chooseGuess [a] = a
+chooseGuess (x:xs) = x
 
 matchPitchGuess :: String -> [String] -> Bool
 matchPitchGuess pit [] = False
@@ -69,20 +92,30 @@ matchNoteOrOctaveGuess n_o gus =
 		else False
 
 
+--deleteList_000 :: [String] -> [[String]] -> [[String]]
+--deleteList_000 [a:ax,b:bx,c:cx] [] = []
+--deleteList_000 [a:ax,b:bx,c:cx] (x:xs) =
+--	if x == [a:ax,b:bx,c:cx] || (matchNoteOrOctaveGuess a x) || (matchNoteOrOctaveGuess ax x) || (matchNoteOrOctaveGuess b x) || (matchNoteOrOctaveGuess bx x) || (matchNoteOrOctaveGuess c x) || (matchNoteOrOctaveGuess cx x)
+--		then [x] ++ deleteList_000 [a:ax,b:bx,c:cx] (x:xs)
+--		else deleteList_000 [a:ax,b:bx,c:cx] (x:xs)
 
-deleteList_000 :: [String] -> [[String]] -> [[String]]
-deleteList_000 [a,b,c] [] = []
-deleteList_000 [a,b,c] (x:xs) =
+deleteList_0bc :: [String] -> [[String]] -> [[String]]
+deleteList_0bc [a,b,c] [] = []
+deleteList_0bc [a,b,c] (x:xs) =
 	if x == [a,b,c] || (matchPitchGuess a x) || (matchPitchGuess b x) || (matchPitchGuess c x) 
-		then [x] ++ deleteList_000 [a,b,c] xs
-		else deleteList_000 [a,b,c] xs
+		then [x] ++ deleteList_0bc [a,b,c] xs
+		else deleteList_0bc [a,b,c] xs
 
-deleteList_03c :: [String] -> [[String]] -> [[String]]
-deleteList_03c [a,b,c] [] = []
-deleteList_03c [a:as,b:bs,c:cs] (x:xs) =
-	if x == [a:as,b:bs,c:cs] && (not (matchNoteOrOctaveGuess a x)) && (not (matchNoteOrOctaveGuess b x)) && (not (matchNoteOrOctaveGuess c x)) 
-		then [x] ++ deleteList_03c [a:as,b:bs,c:cs] xs
-		else deleteList_03c [a:as,b:bs,c:cs] xs
+
+
+
+
+--deleteList_03c :: [String] -> [[String]] -> [[String]]
+--deleteList_03c [a,b,c] [] = []
+--deleteList_03c [a:as,b:bs,c:cs] (x:xs) =
+--	if x == [a:as,b:bs,c:cs] && (not (matchNoteOrOctaveGuess a x)) && (not (matchNoteOrOctaveGuess b x)) && (not (matchNoteOrOctaveGuess c x)) 
+--		then [x] ++ deleteList_03c [a:as,b:bs,c:cs] xs
+--		else deleteList_03c [a:as,b:bs,c:cs] xs
 
 -- deleteList_02c :: [String] -> [[String]] -> [[String]]
 -- deleteList_02c [a,b,c] [] = []
