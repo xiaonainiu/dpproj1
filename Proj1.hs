@@ -1,10 +1,9 @@
 -- by Shen Yi 844373
 -- 26/08/2017
 
--- initialguess A1 B2 C3 : 5975 guesses
--- initialguess A1 B1 C1 : 5975 guesses
--- initialguess A1 B1 C2 : 5975 guesses
-
+-- initialguess A1 B2 C3 : 5830 guesses
+-- initialGuess C2 E2 G2 : 5948 guesses
+-- initialGuess F2 G2 G3 : 6051
 --module declaration
 module Proj1 (initialGuess, nextGuess, GameState) where
 
@@ -43,11 +42,11 @@ gamestate = initializeGameState pitch
 
 -- function initialGuess
 initialGuess :: ([String], GameState)
-initialGuess = (["A1","A2","C2"], initializeGameState (initializePitch initializeNote initializeOctave))
+initialGuess = (["A1","B2","C3"], initializeGameState (initializePitch initializeNote initializeOctave))
 
 -- function nextGuess
 nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
-nextGuess (guess, (x:xs)) (a,b,c) = (  chooseGuess (newtarget guess (x:xs) (a,b,c)) ,  newtarget guess (x:xs) (a,b,c)  )
+nextGuess (guess, (x:xs)) (a,b,c) = (  chooseGuess (newtarget guess (x:xs) (a,b,c)) ( (length(newtarget guess (x:xs) (a,b,c))) - 1 ) ( (length(newtarget guess (x:xs) (a,b,c)) - 2) )  ,  newtarget guess (x:xs) (a,b,c)  )
 
 eqNth :: Eq a => Int -> [a] -> [a] -> Bool
 eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
@@ -69,24 +68,49 @@ newtarget guess target (a,b,c) = if response (head target) guess == (a,b,c)
 	then [(head target)] ++ newtarget guess (tail target) (a,b,c)
 	else newtarget guess (tail target) (a,b,c)
 
-chooseGuess :: [[String]] -> [String]
-chooseGuess [[]] = []
-chooseGuess [a] = a
-chooseGuess (a:b:xs) =
-	if avgTargetLen a (a:b:xs) (length (a:b:xs)) > avgTargetLen b (a:b:xs) (length (a:b:xs))
-		then chooseGuess (b:xs)
-		else chooseGuess (a:xs)
+-- best guess F2 G2 G3 6051
+-- best guess A1 C2 E3 5792
+-- best guess A1 B2 C3 5830
+--chooseGuess :: [[String]] -> [String]
+--chooseGuess [[]] = []
+--chooseGuess [a] = a
+--chooseGuess (a:b:xs) =
+--	if avgTargetLen a (a:b:xs) > avgTargetLen b (a:b:xs)
+--		then chooseGuess (b:xs)
+--		else chooseGuess (a:xs)
 
-avgTargetLen :: [String] -> [[String]] -> Int -> Double
-avgTargetLen assumetarget [] a = 0
-avgTargetLen assumetarget target  0 = 0
-avgTargetLen assumetarget target idx =
-	(getLength assumetarget (target !! (idx-1)) target) + avgTargetLen assumetarget target (idx-1)
+-- same as bottom best A1 A2 A3
+chooseGuess :: [[String]] -> Int -> Int -> [String]
+chooseGuess [[]] idx_min idx = []
+chooseGuess [a] idx_min idx = a
+chooseGuess target idx_min 0 =
+	if avgTargetLen (target !! idx_min) target > avgTargetLen (target !! 0) target
+		then (target !! 0)
+		else (target !! idx_min)
+chooseGuess target idx_min idx =
+	if avgTargetLen (target !! idx_min) target > avgTargetLen (target !! idx) target
+		then chooseGuess target idx (idx-1)
+		else chooseGuess target idx_min (idx-1)
 
-getLength :: [String] -> [String] -> [[String]] -> Double
-getLength assumetarget assumeguess [] = 0
-getLength assumetarget assumeguess target =
-	(fromIntegral (length ( newtarget assumeguess target (response assumetarget assumeguess) ))) / (fromIntegral (length target))
+-- best guess A1 A2 A3 7093
+-- best guess F2 G2 G3 6354
+-- best guess A1 C2 E3 6186
+--chooseGuess :: [[String]] -> [String]
+--chooseGuess target = snd $ minimum $ [(avgTargetLen assumetarget target , assumetarget)| assumetarget <- target]
 
 
+avgTargetLen :: [String] -> [[String]] -> Double
+avgTargetLen assumetarget [] = 0
+avgTargetLen assumetarget target = getavgLen ( frequencyOfElt ( getResponseList assumetarget target ) )
 
+getavgLen :: [Int] -> Double
+getavgLen [] = 0
+getavgLen (x:xs) = ( fromIntegral (x^2)) / ( fromIntegral ( length( (x:xs) ) ) )
+
+
+frequencyOfElt :: [(Int,Int,Int)] -> [Int]
+frequencyOfElt xs = [ length $ filter (== c) xs | c <- nub xs]
+
+getResponseList :: [String] -> [[String]] -> [(Int,Int,Int)]
+getResponseList assumetarget [] = []
+getResponseList assumetarget (x:xs) = [(response x assumetarget)] ++ getResponseList assumetarget xs
