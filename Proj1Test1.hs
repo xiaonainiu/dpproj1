@@ -4,12 +4,13 @@
 --  Origin   : Sat Aug 20 22:06:04 2011
 --  Purpose  : Test program for proj1 project submissions
 
-module Main where
+module TestPro1 where
 
 import Data.List
 import System.Environment
 import System.Exit
 import Proj1
+import Debug.Trace
 
 -- | Compute the correct answer to a guess.  First argument is the 
 --   target, second is the guess.
@@ -47,37 +48,28 @@ validPitch note =
   note!!0 `elem` ['A'..'G'] && 
   note!!1 `elem` ['1'..'3']
 
+choose :: [String] -> Int -> [[String]]
+choose _ 0 = [[]]
+choose [] _ = []
+choose (x:xs) n = (map (\ys -> x:ys) (choose xs (n-1))) ++ (choose xs n)
 
+allPossible :: [[String]]
+allPossible = choose ["A1","A2","A3","B1","B2","B3","C1","C2","C3","D1","D2","D3","E1","E2","E3","F1","F2","F3","G1","G2","G3"] 3
 -- | Main program.  Gets the target from the command line (as three
 --   separate command line arguments, each a note letter (upper case)
 --   followed by an octave number.  Runs the user's initialGuess and
 --   nextGuess functions repeatedly until they guess correctly.
 --   Counts guesses, and prints a bit of running commentary as it goes.
-main :: IO ()
-main = do
-  args <- getArgs
-  let target = args
-  let test = head args
-  if length args == 3 && validChord target then do
-    let (guess,other) = initialGuess
-    loop target guess other 1
-    else do
-    putStrLn "Usage:  proj1 p1 p2 p3"
-    putStrLn "   where p1 p2 p3 are 3 different pitches between A1 and G3"
-    exitFailure
 
 
-loop :: [String] -> [String] -> Proj1.GameState -> Int -> IO ()
-loop target guess other guesses = do
-  putStrLn $ "Your guess " ++ show guesses ++ ":  " ++ show guess
-  if validChord guess then do
-    let answer = response target guess
-    putStrLn $ "My answer:  " ++ show answer
-    if answer == (3,0,0) then do
-      putStrLn $ "You got it in " ++ show guesses ++ " guesses!"
-      else do
-      let (guess',other') = nextGuess (guess,other) answer
-      loop target guess' other' (guesses+1)
-    else do
-    putStrLn "Invalid guess"
-    exitFailure
+testProj1 :: [[String]]-> Int
+(guess,other) = initialGuess
+testProj1 [] = 0
+testProj1 (x:xs) = trace("pitch:" ++ show x) (loop x guess other 1) + (testProj1 xs)
+
+
+loop :: [String] -> [String] -> Proj1.GameState -> Int -> Int
+loop target guess other guesses
+  | response target guess == (3,0,0) = guesses
+  | otherwise = loop target guess' other' (guesses+1)
+    where (guess',other') = nextGuess (guess,other) (response target guess)

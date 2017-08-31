@@ -1,7 +1,9 @@
 -- by Shen Yi 844373
 -- 26/08/2017
 
-
+-- initialguess A1 B2 C3 : 5975 guesses
+-- initialguess A1 B1 C1 : 5975 guesses
+-- initialguess A1 B1 C2 : 5975 guesses
 
 --module declaration
 module Proj1 (initialGuess, nextGuess, GameState) where
@@ -41,7 +43,7 @@ gamestate = initializeGameState pitch
 
 -- function initialGuess
 initialGuess :: ([String], GameState)
-initialGuess = (["A1","B2","C3"], initializeGameState (initializePitch initializeNote initializeOctave))
+initialGuess = (["A1","A2","C2"], initializeGameState (initializePitch initializeNote initializeOctave))
 
 -- function nextGuess
 nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
